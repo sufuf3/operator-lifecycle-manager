@@ -1,0 +1,68 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: origin
+  namespace: kube-system
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRoleBinding
+metadata:
+  name: dashboard
+subjects:
+- kind: ServiceAccount
+  name: origin
+  namespace: kube-system
+roleRef:
+  kind: ClusterRole
+  name: cluster-admin
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    run: origin
+  name: origin
+  namespace: kube-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      run: origin
+  template:
+    metadata:
+      labels:
+        run: origin
+    spec:
+      serviceAccountName: origin
+      containers:
+      - image: quay.io/openshift/origin-console:v3.11.0
+        imagePullPolicy: Always
+        name: console
+        env:
+        - name: BRIDGE_USER_AUTH
+          value: disabled # must be one of: oidc, disabled
+        ports:
+        - containerPort: 9000
+          protocol: TCP
+      restartPolicy: Always
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dashboard
+  namespace: kube-system
+  labels:
+    run: origin
+spec:
+  type: NodePort
+  ports:
+  - port: 9000
+    targetPort: 9000
+    nodePort: 31900
+    protocol: TCP
+    name: http
+  selector:
+    run: origin
