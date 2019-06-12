@@ -35,13 +35,15 @@ spec:
         ports:
         - containerPort: 9000
           protocol: TCP
+        - containerPort: 8443
+          protocol: TCP
       restartPolicy: Always
 
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: dashboard
+  name: origin-dashboard
   namespace: kube-system
   labels:
     run: origin
@@ -53,5 +55,10 @@ spec:
     nodePort: 31900
     protocol: TCP
     name: http
+  - port: 8443
+    targetPort: 8443
+    nodePort: 31844
+    protocol: TCP
+    name: api
   selector:
     run: origin
